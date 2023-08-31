@@ -1,7 +1,8 @@
-// SCH Course Copyright Policy (C): DO-NOT-SHARE-WITH-ANYONE
+// SPDX-License-Identifier: MIT
 // https://smartcontractshacking.com/#copyright-policy
 pragma solidity ^0.8.13;
 
+import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**
@@ -11,7 +12,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 contract ChainLend {
     
     // Deposit token is imBTC, borrow token is USDC
-    IERC20 public depositToken;
+    IERC20 public depositToken; // @audit-info Vulenerable token
     IERC20 public borrowToken;
     mapping(address => uint256) public deposits;
     mapping(address => uint256) public debt;
@@ -29,7 +30,6 @@ contract ChainLend {
 
     // Can only be called if the debt is repayed
     function withdraw(uint256 amount) public {
-
         uint256 deposited = deposits[msg.sender];
         require(debt[msg.sender] <= 0, "Please clear your debt to Withdraw Collateral");
         require(amount <= deposited, "Withdraw Limit Exceeded");

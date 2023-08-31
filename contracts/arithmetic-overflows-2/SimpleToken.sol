@@ -2,6 +2,8 @@
 // https://smartcontractshacking.com/#copyright-policy
 pragma solidity ^0.7.0;
 
+import "hardhat/console.sol";
+
 /**
  * @title SimpleToken
  * @author JohnnyTime (https://smartcontractshacking.com)
@@ -27,5 +29,4 @@ contract SimpleToken {
     getBalance[_to] += _value;
     return true;
   }
-  
 }

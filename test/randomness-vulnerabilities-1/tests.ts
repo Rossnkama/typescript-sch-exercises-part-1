@@ -3,13 +3,14 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { BigNumber } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 import { expect } from "chai";
-import { Game, Game__factory } from "../../typechain-types";
+import { Game, Game__factory, Exploit, Exploit__factory } from "../../typechain-types";
 
 describe("Randomness Vulnerabilites Exercise 1", function () {
     let deployer: SignerWithAddress, attacker: SignerWithAddress;
     const GAME_POT = parseEther("10"); // 10 ETH
 
     let game: Game;
+    let exploit: Exploit;
 
     let attackerInitialBalance: BigNumber;
 
@@ -28,12 +29,19 @@ describe("Randomness Vulnerabilites Exercise 1", function () {
         )) as Game__factory;
         game = await gameFactory.deploy({ value: GAME_POT });
 
+        const explotFactory = (await ethers.getContractFactory(
+            "Exploit",
+            attacker
+        )) as Exploit__factory;
+        exploit = await explotFactory.deploy(game.address);
+
         let inGame = await ethers.provider.getBalance(game.address);
         expect(inGame).to.equal(GAME_POT);
     });
 
     it("Exploit", async function () {
-        /** CODE YOUR SOLUTION HERE */
+        await exploit.connect(attacker).attack();
+        await exploit.connect(attacker).withdraw();
     });
 
     after(async function () {

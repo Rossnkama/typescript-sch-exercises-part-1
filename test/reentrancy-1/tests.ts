@@ -3,7 +3,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { BigNumber } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 import { expect } from "chai";
-import { EtherBank, EtherBank__factory } from "../../typechain-types";
+import { EtherBank, EtherBank__factory, Attack, Attack__factory } from "../../typechain-types";
 
 describe("Reentrancy Exercise 1", function () {
     let deployer: SignerWithAddress,
@@ -19,6 +19,7 @@ describe("Reentrancy Exercise 1", function () {
     let USER4_DEPOSIT = parseEther("63");
 
     let bank: EtherBank;
+    let attack: Attack;
 
     let attackerInitialEthBalance: BigNumber;
     let bankInitialBalance: BigNumber;
@@ -57,6 +58,17 @@ describe("Reentrancy Exercise 1", function () {
 
     it("Exploit", async function () {
         /** CODE YOUR SOLUTION HERE */
+        const AttackFactory = (await ethers.getContractFactory(
+            "contracts/reentrancy-1/Attack.sol:Attack",
+            attacker
+        )) as Attack__factory;
+
+        attack = await AttackFactory.deploy(bank.address);
+        
+        attack.connect(attacker).attack({
+            value: parseEther("1")
+        })
+        
     });
 
     after(async function () {

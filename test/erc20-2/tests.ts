@@ -2,8 +2,10 @@ import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { BigNumber } from "ethers";
 import { parseEther } from "ethers/lib/utils";
-import { expect } from "chai";
-import { IERC20 } from "../../typechain-types";
+import { assert, expect } from "chai";
+import { IERC20, IRTOKEN, TokensDepository, TokensDepository__factory } from "../../typechain-types";
+import { deployContract } from "@nomiclabs/hardhat-ethers/types";
+import { ERC20 } from "../../typechain-types/contracts/access-control-4/Starlight.sol";
 
 describe("ERC20 Tokens Exercise 2", function () {
     let deployer: SignerWithAddress,
@@ -19,7 +21,10 @@ describe("ERC20 Tokens Exercise 2", function () {
     const UNI_HOLDER = "0x193ced5710223558cd37100165fae3fa4dfcdc14";
     const WETH_HOLDER = "0x741aa7cfb2c7bf2a1e7d4da2e3df6a56ca4131f3";
 
+    const ZERO_ETH = parseEther("0");
     const ONE_ETH = parseEther("1");
+    const ONE_HUNDRED_ETH = parseEther("100");
+    const TEN_THOUSAND_ETH = parseEther("10000");
 
     let aave: IERC20;
     let uni: IERC20;
@@ -29,10 +34,15 @@ describe("ERC20 Tokens Exercise 2", function () {
     let initialUNIBalance: BigNumber;
     let initialWETHBalance: BigNumber;
 
+    let depositContractFactory: TokensDepository__factory;
+    let depositoryContract: TokensDepository;
+
     before(async function () {
         /** SETUP EXERCISE - DON'T CHANGE ANYTHING HERE */
 
         [deployer] = await ethers.getSigners();
+
+        depositContractFactory = await ethers.getContractFactory("TokensDepository", deployer) as TokensDepository__factory;
 
         // Load tokens mainnet contracts
         aave = (await ethers.getContractAt(
@@ -73,7 +83,8 @@ describe("ERC20 Tokens Exercise 2", function () {
 
         console.log(
             "AAVE Holder AAVE Balance: ",
-            ethers.utils.formatUnits(initialAAVEBalance)
+            ethers.utils.formatUnits(initialAAVEBalance),
+            uniHolder.address
         );
         console.log(
             "UNI Holder UNI Balance: ",
@@ -87,24 +98,95 @@ describe("ERC20 Tokens Exercise 2", function () {
 
     it("Deploy depository and load receipt tokens", async function () {
         /** CODE YOUR SOLUTION HERE */
+        
         // TODO: Deploy your depository contract with the supported assets
+        depositoryContract = await depositContractFactory.deploy();
+        
         // TODO: Load receipt tokens into objects under `this` (e.g rAve)
+        this.rAAVE = await depositoryContract.rAAVE();
+        this.rUNI = await depositoryContract.rUNI();
+        this.rWETH = await depositoryContract.rWETH();
     });
 
     it("Deposit tokens tests", async function () {
         /** CODE YOUR SOLUTION HERE */
         // TODO: Deposit Tokens
-        // 15 AAVE from AAVE Holder
-        // 5231 UNI from UNI Holder
-        // 33 WETH from WETH Holder
+        await aave.connect(aaveHolder).approve(depositoryContract.address, TEN_THOUSAND_ETH)
+        await uni.connect(uniHolder).approve(depositoryContract.address, TEN_THOUSAND_ETH)
+        await weth.connect(wethHolder).approve(depositoryContract.address, ONE_HUNDRED_ETH)
+        
+        await depositoryContract.connect(aaveHolder).deposit(AAVE_ADDRESS, TEN_THOUSAND_ETH)
+        await depositoryContract.connect(uniHolder).deposit(UNI_ADDRESS, TEN_THOUSAND_ETH)
+        await depositoryContract.connect(wethHolder).deposit(WETH_ADDRESS, ONE_HUNDRED_ETH)
+
         // TODO: Check that the tokens were sucessfuly transfered to the depository
+        let depositoryContractAaveBalance = await aave.balanceOf(depositoryContract.address)
+        let depositoryContractUniBalance = await uni.balanceOf(depositoryContract.address)
+        let depositoryContractWethBalance = await weth.balanceOf(depositoryContract.address)
+        
+        assert(depositoryContractAaveBalance.eq(TEN_THOUSAND_ETH))
+        assert(depositoryContractUniBalance.eq(TEN_THOUSAND_ETH))
+        assert(depositoryContractWethBalance.eq(ONE_HUNDRED_ETH))
+
         // TODO: Check that the right amount of receipt tokens were minted
+        let rAAVE = (await ethers.getContractAt(
+            "@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20",
+            this.rAAVE
+        )) as IERC20;
+        let rUNI = (await ethers.getContractAt(
+            "@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20",
+            this.rUNI
+        )) as IERC20;
+        let rWETH = (await ethers.getContractAt(
+            "@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20",
+            this.rWETH
+        )) as IERC20;
+
+        let aaveHolderRecipetTokensBalance = await rAAVE.balanceOf(aaveHolder.address)
+        let uniHolderRecipetTokensBalance = await rUNI.balanceOf(uniHolder.address)
+        let wethHolderRecipetTokensBalance = await rWETH.balanceOf(wethHolder.address)
+
+        assert(aaveHolderRecipetTokensBalance.eq(TEN_THOUSAND_ETH))
+        assert(uniHolderRecipetTokensBalance.eq(TEN_THOUSAND_ETH))
+        assert(wethHolderRecipetTokensBalance.eq(ONE_HUNDRED_ETH))
     });
 
     it("Withdraw tokens tests", async function () {
         /** CODE YOUR SOLUTION HERE */
         // TODO: Withdraw ALL the Tokens
+        let rAAVE = (await ethers.getContractAt(
+            "@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20",
+            this.rAAVE
+        )) as IERC20;
+        let rUNI = (await ethers.getContractAt(
+            "@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20",
+            this.rUNI
+        )) as IERC20;
+        let rWETH = (await ethers.getContractAt(
+            "@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20",
+            this.rWETH
+        )) as IERC20;
+
+        await depositoryContract.connect(aaveHolder).withdraw(AAVE_ADDRESS, TEN_THOUSAND_ETH)
+        await depositoryContract.connect(uniHolder).withdraw(UNI_ADDRESS, TEN_THOUSAND_ETH)
+        await depositoryContract.connect(wethHolder).withdraw(WETH_ADDRESS, ONE_HUNDRED_ETH)
+
         // TODO: Check that the right amount of tokens were withdrawn (depositors got back the assets)
+        let depositoryContractAaveBalance = await aave.balanceOf(depositoryContract.address)
+        let depositoryContractUniBalance = await uni.balanceOf(depositoryContract.address)
+        let depositoryContractWethBalance = await weth.balanceOf(depositoryContract.address)
+        
+        assert(depositoryContractAaveBalance.eq(ZERO_ETH))
+        assert(depositoryContractUniBalance.eq(ZERO_ETH))
+        assert(depositoryContractWethBalance.eq(ZERO_ETH))
+
         // TODO: Check that the right amount of receipt tokens were burned
+        let totalSupplyAave = await rAAVE.totalSupply();
+        let totalSupplyUni = await rUNI.totalSupply();
+        let totalSupplyWeth = await rWETH.totalSupply();
+
+        assert(totalSupplyAave.eq(ZERO_ETH))
+        assert(totalSupplyUni.eq(ZERO_ETH))
+        assert(totalSupplyWeth.eq(ZERO_ETH))
     });
 });

